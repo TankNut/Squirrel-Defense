@@ -61,47 +61,18 @@ if CLIENT then
 		self:GetTurret().Bracket:SetAngles(Angle(0, self.Yaw, 0))
 	end
 else
-	function ENT:Initialize()
-		BaseClass.Initialize(self)
-
-		local filter = RecipientFilter()
-
-		filter:AddAllPlayers()
-
-		self.Sound = CreateSound(self, "ambient/energy/electric_loop.wav", filter)
-	end
-
-	function ENT:Think()
-		BaseClass.Think(self)
-
-		if self.NextFire <= CurTime() and self.Sound:IsPlaying() then
-			self.Sound:Stop()
-		end
-
-		return true
-	end
-
-	function ENT:OnRemove()
-		self.Sound:Stop()
-	end
-
 	function ENT:FireGun()
 		self:FireBullets({
 			Attacker = self:GetParent(),
 			Damage = 8,
-			TracerName = "sd_e_tesla",
+			TracerName = "ToolTracer",
 			Dir = self:GetForward(),
 			Spread = Vector(0.01, 0.01, 0),
 			Src = self:GetShootPos(),
-			IgnoreEntity = self:GetParent(),
-			Callback = function(attacker, tr, dmg)
-				dmg:SetDamageType(DMG_SHOCK)
-			end
+			IgnoreEntity = self:GetParent()
 		})
 
-		if not self.Sound:IsPlaying() then
-			self.Sound:Play()
-		end
+		self:EmitSound("Weapon_AR2.NPC_Single")
 
 		self.NextFire = CurTime() + self.FireDelay
 	end
