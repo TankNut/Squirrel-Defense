@@ -9,6 +9,10 @@ function EFFECT:Init(data)
 	self.Magnitude = data:GetMagnitude()
 	self.Radius = data:GetRadius()
 
+	if self.Scale == 0 then
+		self.Scale = 1
+	end
+
 	if self.Magnitude == 0 then
 		self.Magnitude = 1
 	end
