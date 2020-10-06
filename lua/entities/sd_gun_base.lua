@@ -178,7 +178,7 @@ else
 
 		local tr = util.TraceLine({
 			start = self:WorldSpaceCenter(),
-			endpos = target:WorldSpaceCenter(),
+			endpos = TankLib.Target:Get(target),
 			filter = {self, self:GetParent(), target},
 			mask = MASK_SHOT
 		})
