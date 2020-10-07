@@ -1,27 +1,20 @@
-EFFECT.Mat = Material("sprites/rollermine_shock")
 EFFECT.Color = Color(255, 255, 255)
+EFFECT.Mat = Material("sprites/rollermine_shock")
+
+function EFFECT:Get(data, key, fallback)
+	local val = data["Get" .. key](data)
+
+	return val == 0 and fallback or val
+end
 
 function EFFECT:Init(data)
 	self.Start = data:GetStart()
 	self.End = data:GetOrigin()
 
-	self.Scale = data:GetScale()
-	self.Magnitude = data:GetMagnitude()
-	self.Radius = data:GetRadius()
-
-	if self.Scale == 0 then
-		self.Scale = 1
-	end
-
-	if self.Magnitude == 0 then
-		self.Magnitude = 1
-	end
-
 	local distance = self.Start:Distance(self.End)
 
-	if self.Radius == 0 then
-		self.Radius = distance / 16
-	end
+	self.Scale = self:Get(data, "Scale", 1)
+	self.Radius = self:Get(data, "Radius", distance / 16)
 
 	self:SetRenderBoundsWS(self.Start, self.End)
 
@@ -37,9 +30,7 @@ function EFFECT:GenerateLightning()
 		Offshoot = 1
 	}}
 
-	local subdivisions = self.Magnitude * 4
-
-	for i = 1, subdivisions do
+	for i = 1, 4 do
 		local rand = self.Radius / i
 
 		for j = 1, #self.Beams do
@@ -119,7 +110,7 @@ function EFFECT:Render()
 		local texture = 0
 
 		for k, v in ipairs(data.Beams) do
-			texture = texture + ((previous != nil) and (previous:Distance(v) / 32) or 0)
+			texture = texture + (previous and previous:Distance(v) / 32 or 0)
 
 			if k == #data.Beams then
 				self.Color.a = 0
