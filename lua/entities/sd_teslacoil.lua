@@ -15,15 +15,14 @@ ENT.SDCanConnect 	= true
 
 ENT.Model 			= Model("models/hunter/blocks/cube05x05x05.mdl")
 
-ENT.UseCustomPhys 	= false
-ENT.PhysMin 		= Vector()
-ENT.PhysMax 		= Vector()
+ENT.UseCustomPhys 	= true
+ENT.PhysMin 		= Vector(-12, -12, -12)
+ENT.PhysMax 		= Vector(12, 12, 60)
 
 ENT.ChargeTime 		= 2
-ENT.Damage 			= 60
+ENT.DPS 			= 30
 
-ENT.Range 			= 300
-ENT.Delay 			= 0
+ENT.Range 			= 500
 
 ENT.Offset 			= Vector(0, 0, 48)
 
@@ -58,7 +57,7 @@ if CLIENT then
 		part:SetMaterial("phoenix_storms/Fender_chrome")
 		part:SetScale(0.75)
 		part:SetPos(self.Offset)
-		part:SetAngles(Angle(0, 0, 0))
+		part:SetAngles(Angle(90, 0, 0))
 
 		part = TankLib.Part:Create(TankLib.Part.Model, self)
 		part:SetModel("models/props_c17/utilityconnecter006c.mdl")
@@ -170,15 +169,14 @@ else
 		self:EmitSound("ambient.electrical_random_zap_1")
 
 		self:SetChargeTime(CurTime())
-		self.NextDischarge = nil
 
-		local damage = self.Damage
+		local damage = self.DPS * self.ChargeTime
 		local range = self.Range
 
 		local blacklist = {}
 
 		local origin
-		local target = self:GetTarget(self.Range)
+		local target = self:GetTarget(range)
 
 		local function shoot()
 			local pos = origin and origin:WorldSpaceCenter() or self:LocalToWorld(self.Offset)
@@ -189,7 +187,6 @@ else
 
 			ed:SetStart(pos)
 			ed:SetOrigin(tpos)
-			ed:SetScale(damage / self.Damage)
 
 			util.Effect("sd_e_tesla", ed)
 
@@ -246,15 +243,11 @@ function ENT:Think()
 
 			util.Effect("sd_e_tesla", ed)
 		elseif SERVER then
-			if self.NextDischarge then
-				if self.NextDischarge <= CurTime() then
-					self:Discharge()
-				end
-			elseif charge >= 1 then
+			if charge >= 1 then
 				local target = self:GetTarget(self.Range)
 
 				if IsValid(target) then
-					self.NextDischarge = CurTime() + self.Delay
+					self:Discharge()
 				end
 			end
 		end
