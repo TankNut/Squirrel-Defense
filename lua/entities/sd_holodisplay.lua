@@ -202,7 +202,7 @@ if CLIENT then
 			circle(0, 0, self.Radius, resolution)
 		cam.End3D2D()
 
-		for _, v in pairs(grid:GetTargets()) do
+		for _, v in pairs(grid:GetEnemies()) do
 			self:DrawEntity(v, color_red)
 		end
 

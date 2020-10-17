@@ -11,7 +11,7 @@ ENT.Spawnable 		= true
 
 ENT.SDCanConnect 	= true
 
-ENT.Radius 			= 5000
+ENT.Range 			= 5000
 
 ENT.Model 			= Model("models/hunter/blocks/cube1x1x05.mdl")
 
@@ -26,6 +26,16 @@ function ENT:Initialize()
 		self.NextRadar = CurTime()
 		self.Entities = {}
 	end
+end
+
+function ENT:Think()
+	if CLIENT then
+		self:UpdateParts()
+	end
+
+	self:NextThink(CurTime())
+
+	return true
 end
 
 if CLIENT then
@@ -77,55 +87,65 @@ if CLIENT then
 			self.BasePart:SetAngles(Angle(0, CurTime() * 180, 0))
 		end
 	end
-end
 
-function ENT:Think()
-	if CLIENT then
-		self:UpdateParts()
+	local col = Color(255, 223, 127, 20)
+
+	function ENT:DrawDebug()
+		local pos = self:WorldSpaceCenter()
+
+		render.SetColorMaterial()
+		render.DrawSphere(pos, self.Range, 20, 20, col)
+		render.DrawSphere(pos, -self.Range, 20, 20, col)
 	end
-
-	self:NextThink(CurTime())
-
-	return true
-end
-
-if SERVER then
-	function ENT:GetTargets()
-		local entities = ents.FindInSphere(self:WorldSpaceCenter(), self.Radius)
+else
+	function ENT:GetEnemies()
+		local entities = self:GetTargets(self.Range)
 		local owner = self:GetGrid():GetOwner()
 
 		table.Filter(entities, function(key, val)
-			if not SquirrelDefense:IsValidTarget(val) then
+			local ent = val[1]
+
+			if not SquirrelDefense:IsValidTarget(ent) then
 				return false
 			end
 
-			if val:IsPlayer() then
-				return val != self:GetGrid():GetOwner()
-			elseif val:IsNPC() then
-				return val:Disposition(owner) != D_LI
+			if ent:IsPlayer() then
+				return ent != owner
+			elseif ent:IsNPC() then
+				return ent:Disposition(owner) != D_LI
 			end
 		end)
+
+		for k, v in pairs(entities) do
+			entities[k] = v[1]
+		end
 
 		return entities
 	end
 
 	function ENT:GetFriendlies()
-		local entities = ents.FindInSphere(self:WorldSpaceCenter(), self.Radius)
+		local entities = self:GetTargets(self.Range)
 		local owner = self:GetGrid():GetOwner()
 
 		table.Filter(entities, function(key, val)
-			if not SquirrelDefense:IsValidTarget(val) then
+			local ent = val[1]
+
+			if not SquirrelDefense:IsValidTarget(ent) then
 				return false
 			end
 
-			if val:IsPlayer() then
-				return val == self:GetGrid():GetOwner()
-			elseif val:IsNPC() then
-				return val:Disposition(owner) == D_LI
+			if ent:IsPlayer() then
+				return ent == owner
+			elseif ent:IsNPC() then
+				return ent:Disposition(owner) == D_LI
 			end
 
 			return false
 		end)
+
+		for k, v in pairs(entities) do
+			entities[k] = v[1]
+		end
 
 		return entities
 	end

@@ -100,6 +100,10 @@ function ENT:SetupHooks()
 	else
 		self.Hooks = {}
 	end
+
+	if CLIENT then
+		self:Hook("PostDrawTranslucentRenderables")
+	end
 end
 
 function ENT:Hook(name)
@@ -113,6 +117,60 @@ function ENT:OnReloaded()
 
 	if CLIENT then
 		self:SetupParts()
+	end
+end
+
+if CLIENT then
+	function ENT:DrawWorldText(offset, text)
+		local pos = self:GetPos() + offset
+		local ang = (pos - EyePos()):Angle()
+
+		cam.Start3D2D(pos, Angle(0, ang.y - 90, 90), 0.25)
+			render.PushFilterMag(TEXFILTER.NONE)
+			render.PushFilterMin(TEXFILTER.NONE)
+				surface.SetFont("BudgetLabel")
+
+				local w, h = surface.GetTextSize(text)
+
+				surface.SetTextColor(255, 255, 255, 255)
+				surface.SetTextPos(-w * 0.5, -h * 0.5)
+
+				surface.DrawText(text)
+			render.PopFilterMin()
+			render.PopFilterMag()
+		cam.End3D2D()
+	end
+
+	local convar = GetConVar("developer")
+
+	function ENT:PostDrawTranslucentRenderables()
+		if convar:GetBool() then
+			self:DrawDebug()
+		end
+	end
+
+	function ENT:DrawDebug()
+	end
+else
+	function ENT:GetTargets(range, origin)
+		local targets = {}
+		local pos = origin or self:WorldSpaceCenter()
+
+		range = range * range
+
+		for ent in pairs(SquirrelDefense.Targets) do
+			if not SquirrelDefense:IsValidTarget(ent) then
+				continue
+			end
+
+			local dist = pos:DistToSqr(ent:WorldSpaceCenter())
+
+			if dist <= range then
+				table.insert(targets, {ent, dist})
+			end
+		end
+
+		return targets
 	end
 end
 

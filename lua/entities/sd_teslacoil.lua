@@ -38,14 +38,6 @@ function ENT:SetupDataTables()
 	self:NetworkVar("Float", 0, "ChargeTime")
 end
 
-function ENT:SetupHooks()
-	BaseClass.SetupHooks(self)
-
-	if CLIENT then
-		self:Hook("PostDrawTranslucentRenderables")
-	end
-end
-
 if CLIENT then
 	function ENT:SetupParts()
 		BaseClass.SetupParts(self)
@@ -66,70 +58,34 @@ if CLIENT then
 		part:SetAngles(Angle(0, 0, 0))
 	end
 
-	local convar = GetConVar("developer")
+	function ENT:DrawDebug()
+		local pos = self:LocalToWorld(self.Offset)
+		local color = Color(255, 0, 0, 10)
 
-	function ENT:DrawWorldText(offset, text)
-		local pos = self:GetPos() + offset
-		local ang = (pos - EyePos()):Angle()
+		render.SetColorMaterial()
+		render.DrawSphere(pos, self.Range, 20, 20, color)
+		render.DrawSphere(pos, -self.Range, 20, 20, color)
 
-		cam.Start3D2D(pos, Angle(0, ang.y - 90, 90), 0.25)
-			render.PushFilterMag(TEXFILTER.NONE)
-			render.PushFilterMin(TEXFILTER.NONE)
-				surface.SetFont("BudgetLabel")
+		local charge = self:GetCharge()
 
-				local w, h = surface.GetTextSize(text)
-
-				surface.SetTextColor(255, 255, 255, 255)
-				surface.SetTextPos(-w * 0.5, -h * 0.5)
-
-				surface.DrawText(text)
-			render.PopFilterMin()
-			render.PopFilterMag()
-		cam.End3D2D()
-	end
-
-	function ENT:DrawTranslucent()
-		if convar:GetBool() then
-			local charge = self:GetCharge()
-
-			self:DrawWorldText(Vector(0, 0, 63), string.format("Charge: %d%%", charge * 100))
-		end
-	end
-
-	function ENT:PostDrawTranslucentRenderables()
-		if convar:GetBool() then
-			local pos = self:LocalToWorld(self.Offset)
-			local color = Color(255, 0, 0, 50)
-
-			render.SetColorMaterial()
-			render.DrawSphere(pos, self.Range, 20, 20, color)
-			render.DrawSphere(pos, -self.Range, 20, 20, color)
-		end
+		self:DrawWorldText(Vector(0, 0, 63), string.format("Charge: %d%%", charge * 100))
 	end
 else
 	function ENT:GetTarget(range, origin, blacklist)
 		local pos = origin and origin:WorldSpaceCenter() or self:LocalToWorld(self.Offset)
-		local max = range * range
 
 		local targets = {}
 
-		for _, v in pairs(self:GetGrid():GetTargets()) do
-			if not IsValid(v) then
+		for _, v in pairs(self:GetTargets(range, pos)) do
+			local ent = v[1]
+			local dist = v[2]
+
+			if blacklist and blacklist[ent] then
 				continue
 			end
 
-			if blacklist and blacklist[v] then
-				continue
-			end
-
-			local dist = pos:DistToSqr(v:WorldSpaceCenter())
-
-			if dist >= max then
-				continue
-			end
-
-			if self:IsValidTarget(v, origin) then
-				targets[dist] = v
+			if self:IsValidTarget(ent, origin) then
+				targets[dist] = ent
 			end
 		end
 
@@ -143,11 +99,15 @@ else
 	function ENT:IsValidTarget(target, origin)
 		local ent = origin or self
 
-		if not SquirrelDefense:IsValidTarget(target) then
+		if not ent:TestPVS(target) then
 			return false
 		end
 
-		if not ent:TestPVS(target) then
+		local owner = self:GetGrid():GetOwner()
+
+		if target:IsPlayer() and target == owner then
+			return false
+		elseif target:IsNPC() and target:Disposition(owner) == D_LI then
 			return false
 		end
 

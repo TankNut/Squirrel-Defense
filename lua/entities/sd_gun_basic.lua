@@ -17,10 +17,6 @@ function ENT:GetShootPos()
 	return self:LocalToWorld(Vector(20, 0, 0))
 end
 
-function ENT:DoImpactEffect()
-	return true
-end
-
 if CLIENT then
 	function ENT:SetupParts()
 		BaseClass.SetupParts(self)
@@ -65,7 +61,7 @@ else
 		self:FireBullets({
 			Attacker = self:GetParent(),
 			Damage = 8,
-			TracerName = "ToolTracer",
+			TracerName = "AR2Tracer",
 			Dir = self:GetForward(),
 			Spread = Vector(0.01, 0.01, 0),
 			Src = self:GetShootPos(),

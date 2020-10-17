@@ -9,7 +9,7 @@ ENT.RenderGroup 	= RENDERGROUP_BOTH
 ENT.TurnRate 		= 180
 ENT.ErrorMargin 	= Angle(0, 0, 0)
 
-ENT.MaxRange 		= math.huge
+ENT.Range 			= 1000
 
 ENT.FireDelay 		= 0.1
 
@@ -79,28 +79,6 @@ if CLIENT then
 	function ENT:UpdateParts()
 	end
 
-	local convar = GetConVar("developer")
-
-	function ENT:DrawWorldText(offset, text)
-		local pos = self:GetPos() + offset
-		local ang = (pos - EyePos()):Angle()
-
-		cam.Start3D2D(pos, Angle(0, ang.y - 90, 90), 0.25)
-			render.PushFilterMag(TEXFILTER.NONE)
-			render.PushFilterMin(TEXFILTER.NONE)
-				surface.SetFont("BudgetLabel")
-
-				local w, h = surface.GetTextSize(text)
-
-				surface.SetTextColor(255, 255, 255, 255)
-				surface.SetTextPos(-w * 0.5, -h * 0.5)
-
-				surface.DrawText(text)
-			render.PopFilterMin()
-			render.PopFilterMag()
-		cam.End3D2D()
-	end
-
 	function ENT:Draw()
 		if self.Model then
 			self:DrawModel()
@@ -109,48 +87,47 @@ if CLIENT then
 		TankLib.Part:Draw(self)
 	end
 
-	function ENT:DrawTranslucent()
-		if convar:GetBool() then
-			local target = self:GetTarget()
+	local col = Color(255, 0, 0, 20)
 
-			self:DrawWorldText(Vector(0, 0, 12), string.format("Target: %s", target))
-		end
+	function ENT:DrawDebug()
+		local pos = self:WorldSpaceCenter()
+
+		render.SetColorMaterial()
+		render.DrawSphere(pos, self.Range, 20, 20, col)
+		render.DrawSphere(pos, -self.Range, 20, 20, col)
+
+		local target = self:GetTarget()
+
+		self:DrawWorldText(Vector(0, 0, 12), string.format("Target: %s", target))
 	end
 else
 	-- returns true if we have a target
 	function ENT:FindTarget()
-		local pos = self:WorldSpaceCenter()
-
 		local target_old = self:GetTarget()
 		local target_new
 
-		if not self:IsValidTarget(target_old) then
+		if not self:IsValidTarget(target_old, true) then
 			target_old = nil
 		end
 
 		local distance_old = math.huge
 		local distance_new = math.huge
 
-		local maxrange = self.MaxRange * self.MaxRange
+		for _, v in pairs(self:GetTargets(self.MaxRange)) do
+			local ent = v[1]
+			local dist = v[2]
 
-		for _, v in pairs(self:GetGrid():GetTargets()) do
-			if not IsValid(v) then
-				continue
-			end
-
-			local dist = pos:DistToSqr(v:WorldSpaceCenter())
-
-			if dist >= maxrange or dist > distance_new then
-				continue
-			end
-
-			if v == target_old then
+			if ent == target_old then
 				distance_old = dist
 			end
 
-			if self:IsValidTarget(v) then
+			if dist > distance_new then
+				continue
+			end
+
+			if self:IsValidTarget(ent) then
 				distance_new = dist
-				target_new = v
+				target_new = ent
 			end
 		end
 
@@ -167,8 +144,16 @@ else
 		return false
 	end
 
-	function ENT:IsValidTarget(target)
-		if not SquirrelDefense:IsValidTarget(target) then
+	function ENT:IsValidTarget(target, validate)
+		if validate and not SquirrelDefense:IsValidTarget(target) then
+			return false
+		end
+
+		local owner = self:GetGrid():GetOwner()
+
+		if target:IsPlayer() and target == owner then
+			return false
+		elseif target:IsNPC() and target:Disposition(owner) == D_LI then
 			return false
 		end
 

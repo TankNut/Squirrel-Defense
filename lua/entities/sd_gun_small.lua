@@ -76,7 +76,7 @@ else
 				end
 
 				if not abort then
-					abort = not self:IsValidTarget(self:GetTarget())
+					abort = not self:IsValidTarget(self:GetTarget(), true)
 				end
 
 				if abort then

@@ -4,7 +4,7 @@ local class = TankLib.Class:New("SquirrelDefense.DefenseGrid", TankLib.Class.Rep
 
 class:RegisterNetworkVar("Name", "")
 class:RegisterNetworkVar("Owner", NULL)
-class:RegisterNetworkVar("Targets", {})
+class:RegisterNetworkVar("Enemies", {})
 class:RegisterNetworkVar("Friendlies", {})
 class:RegisterNetworkVar("Entities", {})
 
@@ -21,17 +21,17 @@ else
 	end
 
 	function class:UpdateRadar()
-		local targets = {}
+		local enemies = {}
 		local friendlies = {}
 
 		for _, v in pairs(ents.FindByClass("sd_radar")) do
 			if v:GetGrid() == self then
-				table.Add(targets, v:GetTargets())
+				table.Add(enemies, v:GetEnemies())
 				table.Add(friendlies, v:GetFriendlies())
 			end
 		end
 
-		self:SetTargets(table.GetUnique(targets))
+		self:SetEnemies(table.GetUnique(enemies))
 		self:SetFriendlies(table.GetUnique(friendlies))
 	end
 
