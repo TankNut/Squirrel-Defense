@@ -8,24 +8,22 @@ class:RegisterNetworkVar("Enemies", {})
 class:RegisterNetworkVar("Friendlies", {})
 class:RegisterNetworkVar("Entities", {})
 
-if CLIENT then
-	function class:Initialize()
-		SquirrelDefense.Grids[self.NetworkID] = self
-	end
-else
-	function class:Initialize(owner)
-		SquirrelDefense.Grids[self.NetworkID] = self
+function class:Initialize(owner)
+	SquirrelDefense.Grids[self.NetworkID] = self
 
+	if SERVER then
 		self:SetOwner(owner)
 		self:SetName(string.format("%s's Defense Grid (#%s)", owner:Nick(), self.NetworkID))
 	end
+end
 
+if SERVER then
 	function class:UpdateRadar()
 		local enemies = {}
 		local friendlies = {}
 
-		for _, v in pairs(ents.FindByClass("sd_radar")) do
-			if v:GetGrid() == self then
+		for _, v in pairs(self:GetEntities()) do
+			if v:GetClass() == "sd_radar" then
 				table.Add(enemies, v:GetEnemies())
 				table.Add(friendlies, v:GetFriendlies())
 			end
