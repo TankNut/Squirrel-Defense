@@ -22,10 +22,14 @@ if SERVER then
 		local enemies = {}
 		local friendlies = {}
 
-		for _, v in pairs(self:GetEntities()) do
-			if v:GetClass() == "sd_radar" then
-				table.Add(enemies, v:GetEnemies())
-				table.Add(friendlies, v:GetFriendlies())
+		for ent in pairs(self:GetEntities()) do
+			if not IsValid(ent) then
+				continue
+			end
+
+			if ent:GetClass() == "sd_radar" then
+				table.Add(enemies, ent:GetEnemies())
+				table.Add(friendlies, ent:GetFriendlies())
 			end
 		end
 
